@@ -1,0 +1,14 @@
+// Identify Powershell starting MSHTA
+let Process = DeviceProcessEvents
+| where InitiatingProcessParentFileName in ("powershell.exe", "pwsh.exe", "powershell_ise.exe") 
+      and InitiatingProcessFileName == "mshta.exe"
+| project Timestamp, DeviceName, AccountDomain, AccountName;
+
+// Look specifically for URLs
+let NetworkEvents = DeviceNetworkEvents
+| where RemoteIP != "" or RemoteUrl != ""
+| project DeviceName, RemoteIP, RemoteUrl;
+
+// Join the datasets
+Process
+| join kind=inner (NetworkEvents) on DeviceName
