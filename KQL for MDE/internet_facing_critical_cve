@@ -1,0 +1,16 @@
+//Get Internet Facing Devices with a CVE that is Critical
+// Collect all internet facing devices
+let InternetFacingDevices = DeviceInfo
+| summarize arg_max(Timestamp, *) by DeviceId
+| where IsInternetFacing
+| distinct DeviceId;
+// Collect all vulnerabilities for wich an exploit is available
+let ExploitableVulnerabilities = DeviceTvmSoftwareVulnerabilitiesKB
+| where IsExploitAvailable == 1 and CvssScore > 8.9
+| project CveId;
+DeviceTvmSoftwareVulnerabilities
+| where CveId in~ (ExploitableVulnerabilities)
+| where DeviceId in~ (InternetFacingDevices)
+// Summarize results to get the stastics for each device
+| summarize TotalExploitableVulnerabilities = dcount(CveId), CveIds = make_set(CveId), SoftwareNames = make_set(SoftwareName), RecommendedSecurityUpdates = make_set(RecommendedSecurityUpdate) by DeviceName
+| sort by TotalExploitableVulnerabilities
