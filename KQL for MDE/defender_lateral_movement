@@ -1,0 +1,16 @@
+//THIS IS A TEST QUERY AND HAS NOT BEEN VERIFIED!!!
+//Microsoft Defender for Identity continuously monitors your environment to identify sensitive accounts with the riskiest lateral movement paths that expose a security risk,
+//and reports on these accounts to assist you in managing your environment.
+//Paths are considered risky if they have three or more non-sensitive accounts that can expose the sensitive account to credential theft by malicious actors.
+//Refer to this article: https://learn.microsoft.com/en-us/defender-for-identity/understand-lateral-movement-paths
+let SuspectedPatient0 = dynamic(['user1', 'user1']);
+let PrivilegedAccounts = dynamic(['serviceAccount1', 'domainAdmin1']);
+IdentityDirectoryEvents
+| where ActionType == "Potential lateral movement path identified"
+| extend AdditionalInfo = parse_json(AdditionalFields)
+| extend LateralMovementPathToSensitiveAccount = AdditionalFields.['ACTOR.ACCOUNT']
+| extend FromAccount = AdditionalFields.['FROM.ACCOUNT']
+//Uncomment the line below: This will look for Lateral Movement Paths where the "SuspectedPatient0" list is any hop throughout that path
+//| where FromAccount has_any (SuspectedPatient0) or AccountName has_any (PrivilegedAccounts)
+//Uncomment the line below: This will look for Lateral Movement Paths where the SuspectedPatient0 list is the last hop before a sensitive account
+| where AccountName has_any (SuspectedPatient0) and LateralMovementPathToSensitiveAccount has_any (PrivilegedAccounts)
